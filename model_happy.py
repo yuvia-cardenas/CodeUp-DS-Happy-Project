@@ -59,7 +59,7 @@ def predict(train, validate, test):
     validate_predictions["Baseline"]= train.Happiness_Score.mean()
     test_predictions = pd.DataFrame({
     'Happiness_Score': test.Happiness_Score})
-    
+
     return train_predictions, validate_predictions, test_predictions
 
 def simple_lm_model(train, x_train, y_train, validate, x_validate, train_predictions, validate_predictions):
@@ -78,7 +78,7 @@ def simple_lm_model(train, x_train, y_train, validate, x_validate, train_predict
     lm_int = lm_model.intercept_
 
     simp_co = pd.Series(lm_model.coef_, index=x_train.columns).sort_values()
-    print(simp_co)
+    print (train_predictions.head()), (validate_predictions.head())
     return train, train_predictions, validate, validate_predictions
 
 def glm_model(train, x_train, y_train, validate, x_validate, train_predictions, validate_predictions):
@@ -95,12 +95,21 @@ def glm_model(train, x_train, y_train, validate, x_validate, train_predictions, 
     validate['glm_predictions'] = glm_model.predict(x_validate)
 
     glm_co = pd.Series(glm_model.coef_, index=x_train.columns).sort_values()
-    print(glm_co)
+    print (train_predictions.head()), (validate_predictions.head())
     return train, train_predictions, validate, validate_predictions
 
 ###################################################
-################## Evaluate Models on Train #######
+################## Evaluate Models ################
 ###################################################
+models = ['Baseline Train', 'SimpleLinear Train', 'GeneralizedLinear Train','Baseline Validate', 'SimpleLinear Validate', 'GeneralizedLinear Validate', 'Test Model']
+def make_stats_df():
+    '''
+    Function creates dataframe for results of pearsonsr statistical 
+    test for all features.
+    '''
+    evaluate_df = pd.DataFrame()
+    evaluate_df['models'] = models
+    return evaluate_df
 
 def baseline_mean_errors(train):
     
@@ -111,10 +120,11 @@ def baseline_mean_errors(train):
     MSE = mean_squared_error(y, yhat)
     SSE = MSE * len(y)
     RMSE = MSE**.5
-    
-    print("SSE:", round(SSE, 2),"\nMSE: ", round(MSE, 2), 
-      "\nRMSE: ", round(RMSE, 2))
-
+    R2 = explained_variance_score(y,yhat)
+    base_train = RMSE, R2
+    #print("SSE:", round(SSE, 2),"\nMSE: ", round(MSE, 2), 
+    #  "\nRMSE: ", round(RMSE, 2))
+    return base_train
     
 def lm_errors(train):
     y = train.Happiness_Score
@@ -123,10 +133,11 @@ def lm_errors(train):
     MSE = mean_squared_error(y, yhat)
     SSE = MSE * len(y)
     RMSE = MSE**.5
-    
-    print("SSE:", round(SSE, 2),"\nMSE: ", round(MSE, 2), 
-      "\nRMSE: ", round(RMSE, 2))
-
+    R2 = explained_variance_score(y,yhat)
+    simp_train = RMSE, R2
+    #print("SSE:", round(SSE, 2),"\nMSE: ", round(MSE, 2), 
+    #  "\nRMSE: ", round(RMSE, 2))
+    return simp_train
 
 def glm_errors(train):
     y = train.Happiness_Score
@@ -134,9 +145,53 @@ def glm_errors(train):
     MSE = mean_squared_error(y, yhat)
     SSE = MSE * len(y)
     RMSE = MSE**.5
+    R2 = explained_variance_score(y,yhat)
+    gen_train = RMSE, R2
+    #print("SSE:", round(SSE, 2),"\nMSE: ", round(MSE, 2), 
+    #  "\nRMSE: ", round(RMSE, 2))
+    return gen_train
+
+def baseline_mean_errors(train, validate):
     
-    print("SSE:", round(SSE, 2),"\nMSE: ", round(MSE, 2), 
-      "\nRMSE: ", round(RMSE, 2))
+    validate['Baseline']= train.Happiness_Score.mean()
+    y = validate.Happiness_Score
+    yhat = validate.Baseline
+    
+    MSE = mean_squared_error(y, yhat)
+    SSE = MSE * len(y)
+    RMSE = MSE**.5
+    R2 = explained_variance_score(y,yhat)
+    base_val = RMSE, R2
+    #print("SSE:", round(SSE, 2),"\nMSE: ", round(MSE, 2), 
+    #  "\nRMSE: ", round(RMSE, 2))
+    return base_val
+    
+def lm_errors(validate):
+    y = validate.Happiness_Score
+    yhat = validate.lm_predictions
+
+    MSE = mean_squared_error(y, yhat)
+    SSE = MSE * len(y)
+    RMSE = MSE**.5
+    R2 = explained_variance_score(y,yhat)
+    simp_val = RMSE, R2
+    #print("SSE:", round(SSE, 2),"\nMSE: ", round(MSE, 2), 
+    #  "\nRMSE: ", round(RMSE, 2))
+    return simp_val
+
+def glm_errors(validate):
+    y = validate.Happiness_Score
+    yhat = validate.glm_predictions
+    MSE = mean_squared_error(y, yhat)
+    SSE = MSE * len(y)
+    RMSE = MSE**.5
+    R2 = explained_variance_score(y,yhat)
+    gen_val = RMSE, R2
+    #print("SSE:", round(SSE, 2),"\nMSE: ", round(MSE, 2), 
+    #  "\nRMSE: ", round(RMSE, 2))
+    return gen_val
+
+
 
 def test_lm_model(test, x_test, y_test, validate, x_validate, test_predictions, validate_predictions):
     '''
@@ -152,7 +207,7 @@ def test_lm_model(test, x_test, y_test, validate, x_validate, test_predictions, 
     lm_int = lm_model.intercept_
 
     simp_co = pd.Series(lm_model.coef_, index=x_test.columns).sort_values()
-    print(simp_co)
+    #print(simp_co)
     return test, test_predictions, validate, validate_predictions
 
 def lm_test_errors(test):
@@ -162,31 +217,8 @@ def lm_test_errors(test):
     MSE = mean_squared_error(y, yhat)
     SSE = MSE * len(y)
     RMSE = MSE**.5
-    
-    print("SSE:", round(SSE, 2),"\nMSE: ", round(MSE, 2), 
-      "\nRMSE: ", round(RMSE, 2))
-
-def make_metric_df(y, y_hat, model_name, metric_df):
-    if metric_df.size ==0:
-        metric_df = pd.DataFrame(data=[
-            {
-                'model': model_name, 
-                'RMSE': mean_squared_error(
-                    y,
-                    y_hat) ** .5,
-                'r^2': explained_variance_score(
-                    y,
-                    y_hat)
-            }])
-        return metric_df
-    else:
-        return metric_df.append(
-            {
-                'model': model_name, 
-                'RMSE': mean_squared_error(
-                    y,
-                    y_hat) ** .5,
-                'r^2': explained_variance_score(
-                    y,
-                    y_hat)
-            }, ignore_index=True)
+    R2 = explained_variance_score(y,yhat)
+    simp_test = RMSE, R2
+    #print("SSE:", round(SSE, 2),"\nMSE: ", round(MSE, 2), 
+    #  "\nRMSE: ", round(RMSE, 2))
+    return simp_test
