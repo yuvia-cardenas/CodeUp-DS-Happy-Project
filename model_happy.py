@@ -35,14 +35,14 @@ def model_sets(train,validate,test):
     predicting variables (x) and target variable (y)
     ''' 
 
-    x_train = train.drop(columns=['Happiness_Score', 'Happiness_Rank', 'Country'])
+    x_train = train.drop(columns=['Happiness_Score', 'Happiness_Rank', 'Country','Year'])
     y_train = train.Happiness_Score
 
 
-    x_validate = validate.drop(columns=['Happiness_Score', 'Happiness_Rank','Country'])
+    x_validate = validate.drop(columns=['Happiness_Score', 'Happiness_Rank','Country','Year'])
     y_validate = validate.Happiness_Score
 
-    x_test = test.drop(columns=['Happiness_Score', 'Happiness_Rank', 'Country'])
+    x_test = test.drop(columns=['Happiness_Score', 'Happiness_Rank', 'Country','Year'])
     y_test = test.Happiness_Score
 
     return x_train, y_train, x_validate, y_validate, x_test, y_test
@@ -78,7 +78,7 @@ def simple_lm_model(train, x_train, y_train, validate, x_validate, train_predict
     lm_int = lm_model.intercept_
 
     simp_co = pd.Series(lm_model.coef_, index=x_train.columns).sort_values()
-    print (train_predictions.head()), (validate_predictions.head())
+
     return train, train_predictions, validate, validate_predictions
 
 def glm_model(train, x_train, y_train, validate, x_validate, train_predictions, validate_predictions):
@@ -95,13 +95,13 @@ def glm_model(train, x_train, y_train, validate, x_validate, train_predictions, 
     validate['glm_predictions'] = glm_model.predict(x_validate)
 
     glm_co = pd.Series(glm_model.coef_, index=x_train.columns).sort_values()
-    print (train_predictions.head()), (validate_predictions.head())
+    
     return train, train_predictions, validate, validate_predictions
 
 ###################################################
 ################## Evaluate Models ################
 ###################################################
-models = ['Baseline Train', 'SimpleLinear Train', 'GeneralizedLinear Train','Baseline Validate', 'SimpleLinear Validate', 'GeneralizedLinear Validate', 'Test Model']
+models = ['Baseline Train', 'SimpleLinear Train', 'GeneralizedLinear Train','Baseline Validate', 'SimpleLinear Validate', 'GeneralizedLinear Validate']
 def make_stats_df():
     '''
     Function creates dataframe for results of pearsonsr statistical 
@@ -109,6 +109,20 @@ def make_stats_df():
     '''
     evaluate_df = pd.DataFrame()
     evaluate_df['models'] = models
+    return evaluate_df
+
+def final_eval(train, validate, evaluate_df):
+    base_train = baseline_mean_errors(train,validate)
+    simp_train = lm_errors(train)
+    gen_train = glm_errors(train)
+    base_val = baseline_mean_errors(train,validate)
+    simp_val = lm_errors(validate)
+    gen_val = glm_errors(validate)
+
+
+    scores = [base_train, simp_train, gen_train, base_val, simp_val, gen_val]
+    evaluate_df['RMSE']=scores
+    
     return evaluate_df
 
 def baseline_mean_errors(train):
@@ -121,7 +135,8 @@ def baseline_mean_errors(train):
     SSE = MSE * len(y)
     RMSE = MSE**.5
     R2 = explained_variance_score(y,yhat)
-    base_train = RMSE, R2
+    base_train = RMSE
+    
     #print("SSE:", round(SSE, 2),"\nMSE: ", round(MSE, 2), 
     #  "\nRMSE: ", round(RMSE, 2))
     return base_train
@@ -134,7 +149,8 @@ def lm_errors(train):
     SSE = MSE * len(y)
     RMSE = MSE**.5
     R2 = explained_variance_score(y,yhat)
-    simp_train = RMSE, R2
+    simp_train = RMSE
+    
     #print("SSE:", round(SSE, 2),"\nMSE: ", round(MSE, 2), 
     #  "\nRMSE: ", round(RMSE, 2))
     return simp_train
@@ -146,7 +162,8 @@ def glm_errors(train):
     SSE = MSE * len(y)
     RMSE = MSE**.5
     R2 = explained_variance_score(y,yhat)
-    gen_train = RMSE, R2
+    gen_train = RMSE
+    
     #print("SSE:", round(SSE, 2),"\nMSE: ", round(MSE, 2), 
     #  "\nRMSE: ", round(RMSE, 2))
     return gen_train
@@ -161,7 +178,8 @@ def baseline_mean_errors(train, validate):
     SSE = MSE * len(y)
     RMSE = MSE**.5
     R2 = explained_variance_score(y,yhat)
-    base_val = RMSE, R2
+    base_val = RMSE
+    
     #print("SSE:", round(SSE, 2),"\nMSE: ", round(MSE, 2), 
     #  "\nRMSE: ", round(RMSE, 2))
     return base_val
@@ -174,7 +192,8 @@ def lm_errors(validate):
     SSE = MSE * len(y)
     RMSE = MSE**.5
     R2 = explained_variance_score(y,yhat)
-    simp_val = RMSE, R2
+    simp_val = RMSE
+    
     #print("SSE:", round(SSE, 2),"\nMSE: ", round(MSE, 2), 
     #  "\nRMSE: ", round(RMSE, 2))
     return simp_val
@@ -186,11 +205,11 @@ def glm_errors(validate):
     SSE = MSE * len(y)
     RMSE = MSE**.5
     R2 = explained_variance_score(y,yhat)
-    gen_val = RMSE, R2
+    gen_val = RMSE
+    
     #print("SSE:", round(SSE, 2),"\nMSE: ", round(MSE, 2), 
     #  "\nRMSE: ", round(RMSE, 2))
     return gen_val
-
 
 
 def test_lm_model(test, x_test, y_test, validate, x_validate, test_predictions, validate_predictions):
@@ -210,15 +229,4 @@ def test_lm_model(test, x_test, y_test, validate, x_validate, test_predictions, 
     #print(simp_co)
     return test, test_predictions, validate, validate_predictions
 
-def lm_test_errors(test):
-    y = test.Happiness_Score
-    yhat = test.lm_predictions
 
-    MSE = mean_squared_error(y, yhat)
-    SSE = MSE * len(y)
-    RMSE = MSE**.5
-    R2 = explained_variance_score(y,yhat)
-    simp_test = RMSE, R2
-    #print("SSE:", round(SSE, 2),"\nMSE: ", round(MSE, 2), 
-    #  "\nRMSE: ", round(RMSE, 2))
-    return simp_test
