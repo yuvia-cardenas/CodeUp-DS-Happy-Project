@@ -120,6 +120,9 @@ def wrangle_happi():
 
     
 def join_happy(df_2015, df_2016, df_2017, df_2018, df_2019):
+    '''
+    Function joins all clean dataframes.
+    '''
     happy_data = [df_2015, df_2016, df_2017, df_2018, df_2019]
     happy_df = pd.concat(happy_data)
     happy_df.drop(columns=['Social Support'], inplace=True)
